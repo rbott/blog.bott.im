@@ -5,11 +5,13 @@ on:
 
 jobs:
   build_deploy:
-    runs-on: ubuntu-latest
+    runs-on: node:21
     steps:
       - uses: actions/checkout@master
       - name: Build
         uses: TartanLlama/actions-eleventy@master
+        with:
+          install_dependencies: true
       - name: Deploy
         uses: peaceiris/actions-gh-pages@v3
         with:
