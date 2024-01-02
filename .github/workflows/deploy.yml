@@ -2,6 +2,8 @@
 name: Eleventy Build
 on:
   push:
+    branches: [ "main" ]
+  workflow_dispatch:
 
 jobs:
   build_deploy:
