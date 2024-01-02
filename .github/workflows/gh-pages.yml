@@ -1,5 +1,5 @@
 ---
-name: Eleventy Build
+name: GitHub Pages
 on:
   push:
     branches: [ "main" ]
