@@ -1,15 +1,1 @@
-<?xml version="1.0" encoding="utf-8"?>
-<?xml-stylesheet href="/feed.xsl" type="text/xsl"?>
-<feed xmlns="http://www.w3.org/2005/Atom"><title>blog.bott.im</title>
-<subtitle>Personal Opinions, Tech Projects and Open Source in General</subtitle><link href="https://blog.bott.im/excerpts.xml" rel="self"/>
-<link href="https://blog.bott.im/" rel="alternate" />
-<updated>2024-01-01T00:00:00Z</updated>
-<id>https://blog.bott.im/</id>
-<author>
-  <name>Rudolph Bott</name>
-  <uri>https://blog.bott.im/</uri>
-</author><entry><title>Introduction to Ganeti</title>
-<link href="https://blog.bott.im/introduction-to-ganeti/"/>
-<updated>2024-01-01T00:00:00Z</updated>
-<id>https://blog.bott.im/introduction-to-ganeti/</id><content type="html">&lt;p&gt;&lt;b&gt;Disclaimer:&lt;/b&gt; Being one of the maintainers of the Ganeti project, some views might be biased here :-)&lt;/p&gt;&lt;p&gt;During the next weeks and months I will publish a series of blog posts about Ganeti. It is a virtual machine cluster management solution which started as an internal project at Google and saw its first public release in August 2007. With the beta release of Ganeti 3.0 in June 2020, development has officially been taken over by the Ganeti Community from Google.&lt;/p&gt;&lt;p&gt;&lt;a href=&quot;https://blog.bott.im/introduction-to-ganeti/&quot;&gt;Keep reading on blog.bott.im →&lt;/a&gt;&lt;/p&gt;</content>
-</entry></feed>
+<?xml version="1.0" encoding="utf-8"?><?xml-stylesheet href="/feed.xsl" type="text/xsl"?><feed xmlns="http://www.w3.org/2005/Atom"><title>blog.bott.im</title><subtitle>Personal Opinions, Tech Projects and Open Source in General</subtitle><link href="https://blog.bott.im/excerpts.xml" rel="self"/><link href="https://blog.bott.im/" rel="alternate"/><updated>2024-01-01T00:00:00Z</updated><id>https://blog.bott.im/</id><author><name>Rudolph Bott</name><uri>https://blog.bott.im/</uri></author><entry><title>Introduction to Ganeti</title><link href="https://blog.bott.im/introduction-to-ganeti/"/><updated>2024-01-01T00:00:00Z</updated><id>https://blog.bott.im/introduction-to-ganeti/</id><content type="html">&lt;p&gt;&lt;b&gt;Disclaimer:&lt;/b&gt; Being one of the maintainers of the Ganeti project, some views might be biased here :-)&lt;/p&gt;&lt;p&gt;During the next weeks and months I will publish a series of blog posts about Ganeti. It is a virtual machine cluster management solution which started as an internal project at Google and saw its first public release in August 2007. With the beta release of Ganeti 3.0 in June 2020, development has officially been taken over by the Ganeti Community from Google.&lt;/p&gt;&lt;p&gt;&lt;a href=&quot;https://blog.bott.im/introduction-to-ganeti/&quot;&gt;Keep reading on blog.bott.im →&lt;/a&gt;&lt;/p&gt;</content></entry></feed>
