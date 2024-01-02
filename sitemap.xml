@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://blog.bott.im/</loc>
+  </url>
+  <url>
+    <loc>https://blog.bott.im/about/</loc>
+  </url>
+  <url>
+    <loc>https://blog.bott.im/archive/</loc>
+  </url>
+  <url>
+    <loc>https://blog.bott.im/subscribe/</loc>
+  </url>
+  <url>
+    <loc>https://blog.bott.im/introduction-to-ganeti/</loc>
+  </url><url>
+    <loc>https://blog.bott.im/tag/ganeti/</loc>
+  </url></urlset>
