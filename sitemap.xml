@@ -4,13 +4,13 @@
     <loc>https://blog.bott.im/</loc>
   </url>
   <url>
+    <loc>https://blog.bott.im/archive/</loc>
+  </url>
+  <url>
     <loc>https://blog.bott.im/about/</loc>
   </url>
   <url>
     <loc>https://blog.bott.im/subscribe/</loc>
-  </url>
-  <url>
-    <loc>https://blog.bott.im/archive/</loc>
   </url>
   <url>
     <loc>https://blog.bott.im/introduction-to-ganeti/</loc>
