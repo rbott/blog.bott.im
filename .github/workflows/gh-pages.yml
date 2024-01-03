@@ -13,7 +13,8 @@ jobs:
     environment:
       name: github-pages
     steps:
-      - uses: actions/checkout@master
+      - name: Checkout Repository
+        uses: actions/checkout@master
       - name: Setup Node.js environment
         uses: actions/setup-node@v4
         with:
@@ -23,7 +24,6 @@ jobs:
       - name: Build web
         run: npm run build
       - name: Upload Artifact
-        uses: actions/update-pages-artifact
+        uses: actions/upload-pages-artifact
       - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages
