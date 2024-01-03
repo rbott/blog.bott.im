@@ -10,6 +10,8 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+    environment:
+      name: github-pages
     steps:
       - uses: actions/checkout@master
       - name: Setup Node.js environment
@@ -20,9 +22,8 @@ jobs:
         run: npm install
       - name: Build web
         run: npm run build
-      - name: Deploy
-        uses: peaceiris/actions-gh-pages@v3
-        with:
-          publish_dir: _site 
-          publish_branch: gh-pages
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Upload Artifact
+        uses: actions/update-pages-artifact
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
