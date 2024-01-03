@@ -40,4 +40,6 @@ Ganeti is very easy to setup/bootstrap. There are packages available for Debian,
 
 Upgrades of Ganeti clusters are possible and usually work flawlessly. Ganeti itself does not get in the way of your VM operations. It is very robust and can recover from many error states by itself.
 
-While RBD/Ceph or Gluster backends require the additional installation/configuration of services outside of Ganeti, DRBD is fully managed. Ganeti will take care of all DRBD-related operations and provide you with redundant VMs at no additional operative cost. Ganeti powers well-known infrastructures like Wikimedia, Tor Project, Debian or ICANN. It is also in use at various universities and many private companies and you can interact with developers and the community using mailing lists, IRC or Github issues.
+While RBD/Ceph or Gluster backends require the additional installation/configuration of services outside of Ganeti, DRBD is fully managed. Ganeti will take care of all DRBD-related operations and provide you with redundant VMs at no additional operative cost.
+
+Ganeti powers well-known infrastructures like Wikimedia, Tor Project, Debian or ICANN. It is also in use at various universities and many private companies and you can interact with the community using mailing lists, IRC or Github issues.
