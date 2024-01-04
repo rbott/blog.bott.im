@@ -42,10 +42,6 @@ Upgrades of Ganeti clusters are possible and usually work flawlessly. Ganeti its
 
 While RBD/Ceph or Gluster backends require the additional installation/configuration of services outside of Ganeti, DRBD is fully managed. Ganeti will take care of all DRBD-related operations and provide you with redundant VMs at no additional operative cost.
 
-<<<<<<< HEAD
-Ganeti powers well-known infrastructures like Wikimedia, Tor Project, Debian or ICANN. It is also in use at various universities and many private companies and you can interact with the community using mailing lists, IRC or Github issues.
-=======
 Ganeti powers well-known infrastructures like Wikimedia, Tor Project, Debian or ICANN. It is also in use at various universities and many private companies. You can interact with developers and the community using mailing lists, IRC or Github issues.
 
 If you are looking for a new virtualisation platform to power your business or other mission-critical environment, give Ganeti a try. You won't be disappointed!
->>>>>>> da1a637 (rephrase introduction post)
