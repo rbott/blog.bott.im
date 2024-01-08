@@ -17,7 +17,7 @@ We will assume Debian Bookworm to be installed on the servers and focus on that 
 
 The cluster will use DRBD as storage backend to Ganeti. This allows for VM redundancy and live migration without any additional configuration. Ganeti does also offer other replicated storage backends (e.g. RBD, GlusterFS) but all of them require further configuration steps which will exceed the focus of this post.
 
-We will also build a very simple network setup - one interface per node and all are located on the same IPv4 subnet. However, you will find a section at the end of this post on a more sophisticated design. Our three servers will be named `ganeti01.example.org` (192.0.2.5), `ganeti02.example.org` (192.0.2.6) and `ganeti03.example.org` (192.0.2.6). We also have to reserve a dedicated cluster IP on the same subnet (`ganeti-cluster01.example.org`, 192.0.2.4), which will be used and managed by Ganeti. Please make sure that all of your nodes can resolve all four hostnames to their respective IP addresses - either through DNS or through `/etc/hosts`.
+We will also build a very simple network setup - one interface per node and all are located on the same IPv4 subnet. However, you will find a section at the end of this post on a more sophisticated design. Our three servers will be named `ganeti01.example.org` (192.0.2.5), `ganeti02.example.org` (192.0.2.6) and `ganeti03.example.org` (192.0.2.7). We also have to reserve a dedicated cluster IP on the same subnet (`ganeti-cluster01.example.org`, 192.0.2.4), which will be used and managed by Ganeti. Please make sure that all of your nodes can resolve all four hostnames to their respective IP addresses - either through DNS or through `/etc/hosts`.
 
 ## Basic Hardware Setup
 
