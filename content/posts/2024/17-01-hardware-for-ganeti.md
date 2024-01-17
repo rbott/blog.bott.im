@@ -24,7 +24,16 @@ On a well balanced three node cluster, we can assume that primary instances on n
 Should your cluster become so unbalanced that N+1 redundancy can not be guaranteed anymore, Ganeti will warn you.
 Remember: with DRBD, storage will be allocated on instance creation on both the primary and secondary (and hence is “visible” as allocated). CPU and memory allocations of course are only “visible” while an instance is running. Hence on a “full” but well designed (and also well balanced) cluster, your disk usage will show 100% on all nodes, but some CPU cores and memory still seem to be available on each node.
 
-#TODO: Node Liste von vollem Cluster anzeigen
+
+```
+Node                      DTotal DFree MTotal  MNode MFree Pinst Sinst
+ganeti-node01.example.org   3.5T  2.1T 188.5G 115.0G 55.9G    25    24
+ganeti-node02.example.org   3.5T  2.1T 188.5G 130.9G 43.8G    25    24
+ganeti-node03.example.org   3.5T  2.1T 188.5G 130.7G 48.6G    24    25
+ganeti-node04.example.org   3.5T  2.2T 125.8G  79.4G 35.9G    25    24
+ganeti-node05.example.org   3.5T  2.2T 125.8G  76.9G 35.5G    24    25
+ganeti-node06.example.org   3.5T  2.2T 125.8G  82.9G 30.6G    24    25
+```
 
 ## Ratios? All I hear Is Ratios!
 Ganeti knows two types of ratios. The first one is quite useful, the other one is more a relic of old times and usually bites you when you expect it the least.
