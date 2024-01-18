@@ -6,6 +6,8 @@ tags:
   - ganeti
 ---
 Building a new virtualisation cluster will require spending money on hardware at some point. To avoid underutilisation, unwanted overbooking or extremely unbalanced resource usage you need to make some decisions early on and then calculate based on those.
+This post tries to help with some of these decisions. It is entirely biased by the types of Ganeti clusters I have built so far, so as usual YMMV :-)
+
 
 For the sake of simplicity, we will assume that we are using DRBD as the only storage backend for our cluster. This implies that each instance will allocate its entire disk space on exactly two nodes of the cluster. If we would be using some sort of centralized storage (through e.g. `sharedfile` in Ganeti) we would require half the disk space from a Ganeti point of view.
 
