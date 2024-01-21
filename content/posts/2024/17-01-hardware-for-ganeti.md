@@ -9,43 +9,32 @@ Building a new virtualisation cluster will require spending money on hardware at
 This post tries to help with some of these decisions. It is entirely biased by the types of Ganeti clusters I have built so far, so as usual YMMV :-)
 
 
-For the sake of simplicity, we will assume that we are using DRBD as the only storage backend for our cluster. This implies that each instance will allocate its entire disk space on exactly two nodes of the cluster. If we would be using some sort of centralized storage (through e.g. `sharedfile` in Ganeti) we would require half the disk space from a Ganeti point of view.
+For the sake of simplicity, we will assume that we are using DRBD as the only storage backend for our cluster. This implies that each instance will allocate its entire disk space on exactly two nodes of the cluster. Other types of storage
 
 ## To RAID or Not to RAID?
 DRBD is often referred to as “network RAID 1”. So if there is already a RAID 1 across the network, why would I need another RAID/redundancy level on the physical server? Let’s go through an example situation:
 
 A disk in one of your nodes fails:
-- with RAID: your software or hardware RAID will hide away the problem from Ganeti and your instances. You can schedule a disk replacement at your discretion and you are done. You even have the time to live-migrate all running instances off the affected node if required.
-- without RAID: all instances on the affected disk will stall/die. Unless you are using harep, your on-call staff needs to manually restart the affected instances on their secondary node and have Ganeti choose a new replication target. Only after that you can deal with the replacement of the defective disk.
+- with RAID: your software or hardware RAID will hide away the problem from Ganeti and your instances. You can schedule a disk replacement at your discretion and you are done. You even have the time to live-migrate all running instances off the affected node if you want to reduce risk.
+- without RAID: all instances on the affected disk will stall/die. Unless you are using `harep`, your on-call staff needs to manually restart the affected instances on their secondary node and choose new secondary nodes, if you have enough space left on your remaining nodes. Only after that you can deal with the replacement of the defective disk.
 
 If your VM SLAs allow for the latter case, you can save a lot of money on hardware. This will come at the cost of more work each time a disk dies. Otherwise I really suggest to go with RAID on your nodes for peace of mind and easier maintenance.
 
 ## N+1 Redundancy
-In case a node fails, Ganeti assumes that all affected instances will be started on their secondary node (remember, we are using DRBD storage so there is always one designated backup node).
+In case a node fails, Ganeti assumes that all affected instances will be started on their secondary node.
 On a well balanced three node cluster, we can assume that primary instances on node A are split evenly between nodes B and C with their secondary configurations. That means Ganeti will reserve enough headroom on nodes B and C to cater for the node A instances.
-Should your cluster become so unbalanced that N+1 redundancy can not be guaranteed anymore, Ganeti will warn you.
-Remember: with DRBD, storage will be allocated on instance creation on both the primary and secondary (and hence is “visible” as allocated). CPU and memory allocations of course are only “visible” while an instance is running. Hence on a “full” but well designed (and also well balanced) cluster, your disk usage will show 100% on all nodes, but some CPU cores and memory still seem to be available on each node.
-
-
-```
-Node                      DTotal DFree MTotal  MNode MFree Pinst Sinst
-ganeti-node01.example.org   3.5T  2.1T 188.5G 115.0G 55.9G    25    24
-ganeti-node02.example.org   3.5T  2.1T 188.5G 130.9G 43.8G    25    24
-ganeti-node03.example.org   3.5T  2.1T 188.5G 130.7G 48.6G    24    25
-ganeti-node04.example.org   3.5T  2.2T 125.8G  79.4G 35.9G    25    24
-ganeti-node05.example.org   3.5T  2.2T 125.8G  76.9G 35.5G    24    25
-ganeti-node06.example.org   3.5T  2.2T 125.8G  82.9G 30.6G    24    25
-```
+Should your cluster become so unbalanced that N+1 redundancy can not be guaranteed anymore, Ganeti will warn you trough `gnt-cluster verify`.
+Remember: with DRBD, storage will be allocated on both the primary and secondary node. CPU and memory allocations of course are only “visible” while an instance is running. Hence on a “full” but well designed (and also well balanced) cluster, your disk usage will show 100% on all nodes, but some CPU cores and memory still seem to be available on each node.
 
 ## Ratios? All I hear Is Ratios!
 Ganeti knows two types of ratios. The first one is quite useful, the other one is more a relic of old times and usually bites you when you expect it the least.
 
-The so-called vCPU ratio determines the overcommitment of CPU cores. If you do not want that to happen at all, set this ratio to 1. If you want to allow two guest CPU cores per each real CPU core, set it to 2.
+The so-called *vCPU ratio* determines the overcommitment of CPU cores. If you do not want that to happen at all, set this ratio to 1. If you want to allow two guest CPU cores per each real CPU core, set it to 2.
 You should choose your value based on customer SLAs or expected workloads (e.g. full blown prod systems or just idling test systems). Please keep in mind that if you have hyperthreading enabled Ganeti will count these as real cores with regards to the CPU ratio.
 
-The so-called spindle ratio dates back to when spinning disks were the default. It also dates back to an assumption made by Google “back in the day”: Ganeti nodes do not operate on expensive hardware RAIDs which hide the disk topology from the OS. Each visible disk raises the spindle count by one. Before we had SSDs or even NVMEs, a good way to entirely kill the performance of a disk was concurrent access to different areas of said disk. 
+The so-called *spindle ratio* dates back to when spinning disks were the default. It also manifests an assumption made by Google “back in the day”: Ganeti nodes do not operate on expensive hardware RAIDs which hide the disk topology from the OS. The spindle count of a node will equal the amounts of disks visible to the OS. Before we had SSDs or even NVMEs, a good way to entirely kill the performance of a disk was concurrent access to different areas of said disk. 
 To limit the negative effect of multiple instances hammering on the same disk, the spindle ratio can be used to limit the number of instances that are allocated to a node based on its amount of disks available. However, with a hardware RAID in place (which might span two or even twenty-something disks) Ganeti still only ‘sees’ one disk and sets the spindle count accordingly.
-Each instance has a spindle count of `1` - you can manually override that with any number to indicate that this instance “uses” more spindles (e.g. does some I/O heavy stuff).
+Each instance has a spindle use count of `1` - you can manually override that with any number to indicate that this instance “uses” more spindles (e.g. does some I/O heavy stuff).
 When the instance allocator hits the spindle ratio limit, it will error out with the `FailDisk` return value - which unfortunately is the same as e.g. “not enough disk space available”. An hour of confused debugging will follow.
 Unless you are trying to achieve something specific with the spindle ratio, you should just set it to something like 1024, so it never gets in your way.
 
