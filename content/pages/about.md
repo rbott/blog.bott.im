@@ -17,3 +17,5 @@ Mastodon: [@rbo_ne@chaos.social](https://chaos.social/@rbo_ne)
 Pixelfed: [@rbo_ne@pixelfed.de](https://pixelfed.de/@rbo_ne)
 
 Github: [github.com/rbott](https://github.com/rbott)
+
+LinkedIn: [linkedin.com/in/rudolph-bott](https://www.linkedin.com/in/rudolph-bott)
