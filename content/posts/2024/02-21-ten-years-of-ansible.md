@@ -252,7 +252,7 @@ Just keep in mind that it will _include_ the sourrounding quotes, so your Jinja 
 ```json
 {
 {% raw %}
-"author": "{{ author }}",
+"author": {{ author | to_json }},
 "title": {{ title | to_json }},
 "year": {{ year }}
 {% endraw %}
@@ -264,9 +264,9 @@ Just for the sake of completeness: `to_json` can also encode entire data structu
 ```yaml
 ---
 book_data:
-author: 'Rudolph Bott'
-title: 'My "First" Book'
-year: 2024
+  author: 'Rudolph Bott'
+  title: 'My "First" Book'
+  year: 2024
 ```
 
 ```jinja2
