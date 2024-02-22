@@ -102,12 +102,12 @@ While you _can_ use so called inline vaults, you really should not. The other op
 some_non_confidential_var: true
 some_other_non_confidential_var: "yolo"
 super_confidential_stuff: !vault |
-$ANSIBLE_VAULT;1.1;AES256
-32656432386638396362303630666363653830633966663038643330306137643639336361333337
-6665323361333865653635633038316133316266653530610a653534313232363664363066303337
-61656531383861303232366464663137303931383531303236393838656239323765396261656565
-3536633165383762350a333761656664333739626335343563623461323137366531663234383137
-30363338383661646534366266646165313666633561613730353836666336323439
+  $ANSIBLE_VAULT;1.1;AES256
+  32656432386638396362303630666363653830633966663038643330306137643639336361333337
+  6665323361333865653635633038316133316266653530610a653534313232363664363066303337
+  61656531383861303232366464663137303931383531303236393838656239323765396261656565
+  3536633165383762350a333761656664333739626335343563623461323137366531663234383137
+  30363338383661646534366266646165313666633561613730353836666336323439
 ```
 
 On the one hand, inline vaults ensure that all variables which belong together can be located in the same YAML file. If you are using `grep` or similiar to locate `super_confidential_stuff`, you will find exactly where it has been defined (and where it is used). On the other hand, the vault part bloats your YAML file and there is no easy way to decrypt it, without copy/pasting it somewhere else and using `ansible-vault` on that. Replacing the encrypted data also includes quite a bit of copy/pasting. Finally, if you provide the wrong vault password to Ansible, the playbook will run up to the point where it tries to read the inline vault data, fails to decrypt and stop your entire playbook run.
