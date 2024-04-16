@@ -1,7 +1,7 @@
 ---
 title: Reading Your Water Meter Through Wireless M-Bus
 description: My water meter exports data through a wireless interfaces named wireless M-Bus. Let's figure out how to obtain this data!
-date: 2024-04-05
+date: 2024-04-16
 tags:
   - home automation
   - prometheus
@@ -26,9 +26,11 @@ There are many different variants out there, most (if not all) are USB based. No
 Realtek Semiconductor Corp. RTL2838 DVB-T / RTL2838UHIDIR
 ```
 
+<img src="/images/axioma-adapter01.jpg" alt="" />
+
 ### Software Setup
 
-I went through the exact same steps on my Thinkpad Laptop running Debian Trixie (Debian Testing at the time of this writing) and also later on my homeserver running Debian Bookworm. Let's start with some dependencies:
+The following steps work exactly the same both in Debian Trixie (Debian Testing as of now) and Debian Bookworm (Debian Stable). Let's start with some dependencies:
 
 ```shell
 apt install rtl-sdr librtlsdr-dev libxml2-dev build-essential
@@ -101,7 +103,7 @@ Received telegram from: 77777777
                 driver: qcaloric
 ```
 
-But - no data from any water meters. That was a bit of a bummer. I tried moving around the house, sitting right next to the water meter itself, but nothing changed. Could it be that my water meter is either not broadcasting at all or using some other means than wmbus?
+But - no data from any water meters. That was unexpected. I tried moving around the house, sitting right next to the water meter itself, but nothing changed. Could it be that my water meter is either not broadcasting at all or using some other means than wmbus?
 
 On a side note: interestingly, encryption does not seem to be popular among heat cost allocators. While it surely would take some time and effort to triangulate their phyiscal location, it should be possible to create profiles of the heat usage of these apartments and thus track the presence of their tenants. As an example this would be the output of a heat cost allocator using the `fhkvdataiii` driver:
 
@@ -149,7 +151,7 @@ I surely would prefer the meter to transmit less often (say once a minute) but 2
 
 ## On To The Next Surprise
 
-First thing in the morning: fire up the laptop and do a quick test run. Et voila, there's my meter (and also several others):
+First thing in the morning: fire up the laptop and do a quick test run. Et voilà, there's my meter (and also several others):
 
 ```shell
 Started auto rtlwmbus[00000001] listening on c1
@@ -207,6 +209,11 @@ While there is no native support for [MQTT](https://mqtt.org/) in `wmbusmeters` 
 shell=/usr/bin/mosquitto_pub -t wmbusmeters/$METER_ID/total_m3 -m "$METER_TOTAL_M3"; /usr/bin/mosquitto_pub -t wmbusmeters/$METER_ID/status -m "$METER_STATUS"; /usr/bin/mosquitto_pub -t wmbusmeters/$METER_ID/rssi -m "$METER_RSSI_DBM"
 ```
 
+You also need to specify your device in the same config file (in my case it is `rtlwmbus[00000001]` and that can be obtained from the output of `wmbusmeters auto:c1`):
+```
+device=rtlwmbus[00000001]
+```
+
 You need to create a configuration for your meter as well (e.g. `/etc/wmbusmeters.d/my-meter`):
 
 ```shell
@@ -223,28 +230,42 @@ systemctl enable wmbusmeters
 systemctl start wmbusmeters
 ```
 
-It should provide log output in `/var/log/wmbusmeters/wmbusmeters.log`. You can listen to any MQTT messages using `mosquitto_sub -t 'wmbusmeters/#' -v`. Since I already receive data from my photovoltaic system using MQTT, I already have an mqtt-to-prometheus bridge in place which happily picks up the new data and stores it in prometheus.
+It should provide log output in `/var/log/wmbusmeters/wmbusmeters.log`. You can listen to any MQTT messages using `mosquitto_sub -t 'wmbusmeters/#' -v`. Since I already receive and collect data from my photovoltaic system using MQTT, I already have an mqtt-to-prometheus bridge in place which happily picks up the new data and stores it in Prometheus as well.
 
 ## About That (Android) App...
 
-I mentioned earlier that there is a mobile app to read data through NFC. And I also mentioned that it *might* be possible to see & change the configuration of the meter (e.g. make it also broadcast data over the weekend). Let's find out!
+I mentioned earlier that there is a mobile app to read data through NFC. And I also mentioned that it *might* be possible to view & alter the configuration of the meter (e.g. make it also broadcast data over the weekend). Let's find out!
 
 First of all, there is no iOS app. I have changed my daily driver to an iPhone a while ago so that's a bummer. The [Android app](https://play.google.com/store/apps/details?id=com.axiomametering.meter_configurator&hl=de&pli=1) can be found on the Play Store as *Meter Configurator* by *Axioma Metering*. Since I still own an Android tablet, let's try that!
 
 Unfortunatly, I could not find the app on the Play Store using my tablet. I only then figured out that my tablet actually is not equipped with NFC. Trying to navigate to the app in the Play Store using my tablet's browser presented me the error message that the app is not supported on my device which kinda makes sense.
 
-On to the next device, an older Android phone running Android 10. It was freshly wiped/reset, so I did a quick minimal setup/initial configuration, verified it actually *has* NFC, opened the Play Store et voila: my device is also not supported :-( Since I will be wiping the device anyways after my testing, let's try sideloading the app. First I tried [Meter Configurator](https://apkpure.com/de/meter-configurator/com.axiomametering.meter_configurator) off apkpure.com. This seems to be the most recent version (1.0.4 released January 2024), which only comes up with a login screen upon start. I do not have any credentials and it also does not give any hints against what it tries to authenticate. So this is not helpful either.
+On to the next device: an older Android phone running Android 10. It was freshly wiped/reset, so I did a quick minimal setup, verified it actually *has* NFC, opened the Play Store et voilà: my device is also not supported :-( Since I will be wiping the device anyways after my testing, let's try sideloading the app from one of those dubios APK archive websites. First I tried [Meter Configurator](https://apkpure.com/de/meter-configurator/com.axiomametering.meter_configurator) off apkpure.com. This seems to be the most recent version (1.0.4, released January 2024), but it simply displays a login screen at startup and nothing else. I do not have any credentials and it also does not give any hints against what it tries to authenticate. So this is not helpful either.
 
-I also found an older version of the app on apkpure.com: [Qalcosonic configurator W1](https://apkpure.com/de/meter-configurator/com.axiomametering.meter_configurator) (also by Axioma), last released in 2020. I tried installing this and finally this seems to pay off. After starting the app it asks you to NFC-connect to your water meter and after doing that I was greeted with this screen:
+I eventually found an older version of the app on apkpure.com: [Qalcosonic configurator W1](https://apkpure.com/de/meter-configurator/com.axiomametering.meter_configurator) (also by Axioma), last released in 2020. I tried installing this and finally this seems to pay off. After starting the app it asks you to NFC-connect to your water meter and after doing that I was greeted with this screen:
 
-<img src="/images/axioma-app01.png" alt="" />
+<img src="/images/axioma-app01.png" alt="" style="max-width: 60%;" />
 
 This looks promising! Checking out the device configuration also yields good results:
 
-<img src="/images/axioma-app02.png" alt="" />
+<img src="/images/axioma-app02.png" alt="" style="max-width: 60%;" />
 
-From the above we can tell that LoRa WAN and WMBus T1 are enabled, while WMBus S1 is not. We can also confirm that the device only broadcasts 6-18h, Monday to Friday. It also does *not* expose flow data, device run time and temperature. I tried changing a few things, then hit the *Upload To Device*  button at the button aaaaaand:
+From the above we can tell that LoRa WAN and WMBus T1 are enabled, while WMBus S1 is not. We can also confirm that the device only broadcasts 6-18h, Monday to Friday. It does *not* expose flow data, device runtime and temperature. I tried changing a few things, then hit the *Upload To Device*  button at the button aaaaaand:
 
-<img src="/images/axioma-app03.png" alt="" />
+<img src="/images/axioma-app03.png" alt="" style="max-width: 60%;" />
 
-Well that's too bad. I have no idea how to gain permission to write the settings back to the device (and frankly, if the manufacturer or the utility company puts effort into stopping me from fiddling with the device, they probably have a good reason to do so). Like the newer version, the app also sports a login form, but it also does not give any clues what it authenticates it against or what would happen *after* a successfull login. I could not find any documentation on the app's usage/features so we will probably never find out.
+Well that's too bad. I have no idea how to gain permission to write the settings back to the device (and frankly, if the manufacturer or the utility company puts effort into stopping me from fiddling with the device's configuration, they probably have a good reason to do so).
+
+The app also comes with a login form, but it also does not give any clues what it authenticates against or what would happen *after* a successfull login.
+
+## Conclusion
+
+While the software stack is not available in e.g. Debian as packages, it was well documented and fairly trivial to setup. Data can be exported into other systems easily as plain text or JSON and you can create nice graphs from that data (e.g. using Prometheus & Grafana):
+
+<img src="/images/axioma-graphs01.png" alt="" />
+
+<img src="/images/axioma-graphs02.png" alt="" />
+
+<img src="/images/axioma-graphs03.png" alt="" />
+
+The only drawbacks are: there is no data at night, which is negligible. But missing the entire weekend is a bit of bummer. Even **if** it would be possible to alter the meter's configuration, sending more telegrams would have a negative impact on battery life and and that cannot be in the interests of the utility company.
