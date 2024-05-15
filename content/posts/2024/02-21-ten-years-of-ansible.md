@@ -299,7 +299,7 @@ forks = 100
 
 ## Making Ansible Playbooks More Robust
 
-Ansible offers multiple ways to make your live with large playbooks, large numbers of hosts or even both easier.
+Ansible offers multiple ways to make your life with large playbooks, large numbers of hosts or even both easier.
 
 ### Set An Error Margin For Your Playbooks
 
