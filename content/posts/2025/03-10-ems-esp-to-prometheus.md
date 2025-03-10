@@ -4,7 +4,7 @@ description: Getting all those fancy boiler data points into a time series DB.
 date: 2025-03-10
 tags:
   - ems-esp
-  - home-automation
+  - home automation
   - prometheus
   - grafana
 ---
