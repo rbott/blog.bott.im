@@ -60,7 +60,7 @@ Network vendors have come up with a term called "BGP dynamic peers" or "BGP unnu
 
 As soon as the network device receives a router advertisement on an interface configured for dynamic BGP peers, it will configure a BGP neighbor on-the-fly, connect, validate that e.g. the remote ASN is in the accepted range and start exchanging routes. From that point on, the BGP session is no different than any statically configured BGP session. You can use policies to reject, accept or modify incoming or outgoing routes.
 
-There is one minor operational issue to keep in mind: if a link and the associated dynamic BGP peer goes down, the network device will remove the peer configuration immediatly. Tradditonal monitoring of BGP session states will not detect this because dynamic BGP neighbors/sessions are either up/established or do not exist at all.
+There is one minor operational issue to keep in mind: if a link and the associated dynamic BGP peer goes down, the network device will remove the peer configuration immediatly. Traditional monitoring of BGP session states will not detect this because dynamic BGP neighbors/sessions are either up/established or do not exist at all.
 
 This works at least for Nokia (tested with srlinux 24.10) and Juniper devices (tested with Junos 23.4). On Linux hosts both [FRR](https://frrouting.org/) and [Bird](https://bird.network.cz/) support dynamic peers. While FRR is able to send router advertisements on its own, you need to pair Bird with [radvd](https://github.com/radvd-project/radvd) to achieve the same.
 
