@@ -15,7 +15,7 @@ tags:
   - ipv6
 ---
 
-It started with a simple idea: what if everything in our data center was routed - not just the core-routers and -switches, but the access layer and the hosts too? So that’s exactly what we did. No VXLAN, no EVNP, no fancy overlays - just plain Layer 3.
+It started with a simple idea: what if everything in our data center was routed - not just the core-routers and -switches, but the access layer and the hosts too? So that’s exactly what we did. No VXLAN, no EVPN, no fancy overlays - just plain Layer 3.
 
 This blog post offers insights into the technologies we used and the challenges we encountered along the way. Although our setup involved Nokia 7220 and Juniper QFX gear, along with the Bird BGP implementation on Linux hosts, this post won’t include ready-to-use configuration snippets. Instead, it focuses on the core technologies and concepts behind our approach.
 
