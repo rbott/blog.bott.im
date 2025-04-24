@@ -13,6 +13,8 @@ tags:
   - srlinux
   - link-local
   - ipv6
+disclaimer:
+  text: This post has been updated on 2025-04-24 (see end of page)
 ---
 
 It started with a simple idea: what if everything in our data center was routed - not just the core-routers and -switches, but the access layer and the hosts too? So that’s exactly what we did. No VXLAN, no EVPN, no fancy overlays - just plain Layer 3.
@@ -165,4 +167,13 @@ Eventually Bird fixed this issue on their end with [this patch](https://gitlab.n
 BGP unnumbered is not a brand new concept. You can easily find online resources [dating back to 2015 (Ivan Pepelnjak's ipSpace Blog)](https://blog.ipspace.net/2015/02/bgp-configuration-made-simple-with/). It has evolved to some sort of defacto-standard but never made it into its own RFC. Nevertheless the advantages of such a network setup are obvious. You can build a large datacenter fabric with many many leafs and even more connected hosts with only very few lines of (generic) configuration on each network device. Just be aware that mixing vendors might get you into trouble here (even more than usual).
 
 
+## Update on 2024-04-24
 
+Great news! As pointed out by [Roberta Maglione on LinkedIn](https://www.linkedin.com/feed/update/urn:li:activity:7321115702701015040?commentUrn=urn%3Ali%3Acomment%3A%28activity%3A7321115702701015040%2C7321160434563067904%29&dashCommentUrn=urn%3Ali%3Afsd_comment%3A%287321160434563067904%2Curn%3Ali%3Aactivity%3A7321115702701015040%29) a [draft RFC has been published](https://datatracker.ietf.org/doc/html/draft-white-linklocal-capability-06) in March which addresses excactly the problem described above. It expires in September 2025, so let's see where this draft leads us.
+
+The intended implementation is split into three parts:
+- a new BGP capability which signals the other end that LLA-only routing updates are a) sent and b) understood
+- allow the MP_REACH_NLRI next-hop field to contain *only* a link-local address or a combination of GUA and LLA
+- specify exactly which error conditions exist and how to handle them
+
+Thanks Roberta for providing that information!
