@@ -1,7 +1,7 @@
 ---
 title: "Look Ma, no Bridge: Layer 3 VM Clusters with Ganeti"
-description: ""
-date: 2026-05-03
+description: "Bridges out, BGP in. A walkthrough of layer-3-only Ganeti clusters - and the live-migration tricks that make them actually work."
+date: 2026-05-05
 tags:
   - ganeti
   - routing
@@ -9,11 +9,13 @@ tags:
   - bird
   - bgp
   - unnumbered
+  - live-migration
+  - kvm
 ---
 
 Earlier last year I [wrote a piece about BGP unnumbered layer-3-only datacenter networks](https://blog.bott.im/bgp-unnumbered-in-2025-same-idea-different-implementations/). Meanwhile that has been put into production and while it works great for regular hosts, we now want to explore how to use it with virtual machines. Specifically with VMs running on Ganeti clusters.
 
-My employer has been using Ganeti since 2014 and I became one of the maintainers of the Ganeti project when Google stopped working on it and handed the project over to the community in 2020. If you are not familiar with Ganeti terminology: a "node" refers to a physical server, running virtual machines. A virtual machine is called an "instance". We use KVM for virtualization, DRBD as storage layer and our current Ganeti clusters use layer 2 bridged connectivity which obviously does not work well in the new layer-2-less world. Let's give a brief summary of how the network is designed:
+My employer has been using [Ganeti](https://ganeti.org/) since 2014 and I became one of the maintainers of the Ganeti project when Google stopped working on it and handed the project over to the community in 2020. If you are not familiar with Ganeti terminology: a "node" refers to a physical server, running virtual machines. A virtual machine is called an "instance". We use KVM for virtualization, DRBD as storage layer and our current Ganeti clusters use layer 2 bridged connectivity which obviously does not work well in the new layer-2-less world. Let's give a brief summary of how the network is designed:
 
 - Spine / Leaf / Host architecture
 - BGP unnumbered with IPv6 link-local addressing between all architecture layers
@@ -32,7 +34,9 @@ We started with the following goals and non-goals for the new VM infrastructure:
 
 # Ganeti: Network Basics
 
-Before we jump straight into our setup, let's do a quick tour of Ganeti's network modes. You can set the network mode on each instance network interface with the `mode` parameter (`bridged`, `ovs` or `routed`). Again for clarity: the network mode is *not* set on instance level, but on NIC level. You may mix-and-match multiple modes on a single instance with multiple NICs.
+Before we jump straight into our setup, you might need a refresh on Ganeti instance network modes. I got you covered, [there's one right here](https://blog.bott.im/revisiting-ganetis-network-modes/)! If you're already confident how all of that works (and you also already know about the cool new network-related features Ganeti 3.2 will bring), you may as well skip directly to the next section!
+
+TL;DR for the impatient: Ganeti's `routed` mode only routes between host and instance — outside connectivity is still assumed to be layer 2. We work around that with a `kvm-vif-bridge` script (Ganeti 3.1 and earlier) or the new `ext` mode (3.2).
 
 # Ganeti Setup
 
@@ -43,8 +47,8 @@ A quick word on Ganeti itself in layer-3-only environments: the setup was no dif
 We tried to follow the KISS principle: just use what's there. We set our example instance's NIC to `routed`, stored its loopback IP address in the `ip` parameter and modified our `bird` configuration to pick up all static /32 routes from the kernel routing table and export them via BGP to the leaf switches. We configured the loopback IP address on the `eth0` interface inside the instance, configured a default route via `dev eth0` et voilà: we have IP connectivity from our instance.
 
 Pros:
-- No BGP/bird inside the VM required (less moving parts)
-- Live migration works with a downtime of ~10 seconds, but only if the above mentioned workaround with the static TAP MAC address is used
+- No BGP/bird inside the VM required (fewer moving parts)
+- Live migration works with a downtime of ~10 seconds, but only if you use the static TAP MAC address workaround shown later in this post
 
 Cons:
 - We are limited by Ganeti's data model: only one IP address per virtual NIC
@@ -66,9 +70,9 @@ The main difference would be: physical servers have two uplinks, while a virtual
 
 ## Node <-> Instance Communication
 
-First off, we need to establish how nodes and instances communicate. To keep it simple, we will use static IPv6 link-local addresses and have Ganeti always assign `fe80::1` on the TAP interface while the instance always configures `fe80::2` on its virtual interface `eth0`. To verify this works, we can use `ping fe80::1%eth0` inside our instance or `ping fe80::2%tapX` on our node, where `tapX` is the TAP interface that corresponds to our test instance.
+First off, we need to establish how nodes and instances communicate. To keep it simple, we will use static IPv6 link-local addresses and have our `kvm-vif-bridge` script always assign `fe80::1` on the TAP interface while the instance always configures `fe80::2` on its virtual interface `eth0`. To verify this works, we can use `ping fe80::1%eth0` inside our instance or `ping fe80::2%tapX` on our node, where `tapX` is the TAP interface that corresponds to our test instance.
 
-Additionally, we instruct the bird instance on the node to set up a BGP session on the freshly created TAP interface and also use the above mentioned workaround with a "static" MAC address for each tap interface. The custom Ganeti network script `/etc/ganeti/kvm-vif-bridge` looks somewhat like this:
+Additionally, we instruct the bird instance on the node to set up a BGP session on the freshly created TAP interface and apply a fixed MAC address to each TAP interface (the static-MAC workaround from the network-modes post, which avoids stale ARP entries after live migration). The custom Ganeti network script `/etc/ganeti/kvm-vif-bridge` looks somewhat like this:
 
 ```shell
 #!/bin/bash
@@ -78,7 +82,7 @@ ip link set "${INTERFACE}" address "5e:aa:bb:cc:dd:e0"
 ip link set "${INTERFACE}" up
 
 # configure static link-local address
-ip a add "fe80::1/64" dev "${INTERFACE} nodad"
+ip a add "fe80::1/64" dev "${INTERFACE}" nodad
 
 # configure bird to attach a BGP session to the new interface
 cat > "/etc/bird/bird.conf.d/50_${INTERFACE}.conf" << EOF
@@ -199,7 +203,7 @@ protocol bgp ganeti_upstream {
 }
 ```
 
-With these configurations in place both on nodes and inside instances we are now able to establish BGP sessions between `fe80::1` and `fe80::2` and exchange routes.
+With these configurations in place both on nodes and inside instances, we are now able to establish BGP sessions between `fe80::1` and `fe80::2` and exchange routes.
 
 ## A Word On Live Migration (And Why It Is So Slow)
 
@@ -217,11 +221,11 @@ Let's go through the process of a live migration in a routed scenario step by st
 - When the QEMU process on the source node finishes/stops, Ganeti will clean up the associated TAP interface.
 - Removing the interface instantly breaks the BGP connection for bird running on the source node (which will lead to a withdrawal of all prefixes originated by the instance, more on that later).
 - However, the bird inside the instance doesn't notice anything at all because it still "thinks" it has an open BGP connection.
-- Meanwhile, the bird process on the destination Ganeti Node has been informed about the new TAP interface and tries to establish a BGP connection to the new peer, possibly running into errors at first.
+- Meanwhile, the bird process on the destination Ganeti node has been informed about the new TAP interface and tries to establish a BGP connection to the new peer, possibly running into errors at first.
 
 If your Ganeti nodes are co-located in the same datacenter and spine/leaf fabric, updates to your routing tables should propagate reasonably fast and migrating an instance should effectively only move the prefix announcement(s) from one physical port to another (or maybe to another switch in a neighboring rack). In our scenario we spread our test Ganeti cluster across two datacenters with separate spine/leaf fabrics, which are interconnected. Since everything is routed, this is no problem for instance movements. But it does mean that updates to your routing tables have to traverse more devices before they are effectively available to all of your systems, delaying the recovery times by a bit.
 
-Long story short, the live migration itself will be as quick as always, but your instances' network will most probably take anywhere between 5 to 300 seconds to recover (with the majority in the > 120s area). Why is that? First off, we are speaking eBGP here. This is a protocol primarily used between internet routers, possibly exchanging hundreds of thousands of prefixes/routes. Receiving these routes, calculating best paths, converging routes etc. can be a very expensive and time consuming process and for that reason eBGP comes with very conservative timers for pretty much everything. It will not attempt to (re)connect aggressively and even the so called BGP hold timer (until a BGP session is considered dead) is commonly between 90 and 240 seconds. 
+Long story short, the live migration itself will be as quick as always, but your instances' network connectivity will most probably take anywhere between 10-ish to 300 seconds or more to recover. Why is that? First off, we are speaking eBGP here. This is a protocol primarily used between internet routers, possibly exchanging hundreds of thousands of prefixes/routes. Receiving these routes, calculating best paths, converging routes etc. can be a very expensive and time consuming process and for that reason eBGP comes with very conservative timers for pretty much everything. It will not attempt to (re)connect aggressively and even the so called BGP hold timer (until a BGP session is considered dead) is commonly between 90 and 240 seconds. 
 
 Also, routers usually apply a delay to route withdrawals in eBGP so that flapping routes or other unintended behavior does not spread too quickly between autonomous systems/networks. Even if your instances' prefixes suddenly (re-)appear in a different corner of your network, the older routes might still be installed in routing tables across your devices.
 
@@ -239,7 +243,7 @@ error wait time 1,3;    # default: 60,300
 error forget time 3;    # default: 300
 ```
 
-Those three settings, added to a `bgp` section of bird, will *greatly* improve error recovery of a BGP session and also especially in the case of live migration. But there's still the issue of the BGP hold timer. After all, the bird process running inside the instance still assumes it is connected to a live BGP peer. While bird knows settings like `hold time <number>` or `keepalive time <number>` we are going to use something else that is more fit to the purpose: BFD, or bidirectional forwarding detection (as a fallback, you may still lower the hold and keepalive timers to something like 30 and 10 seconds). 
+Those three settings, added to a `bgp` section of bird, will *greatly* improve error recovery of a BGP session and also especially in the case of live migration. But there's still the issue of the BGP hold timer. After all, the bird process running inside the instance still assumes it is connected to a live BGP peer. While bird knows settings like `hold time <number>` or `keepalive time <number>` we are going to use something else that is more fit to the purpose: BFD, or [bidirectional forwarding detection](https://datatracker.ietf.org/doc/html/rfc5880) (as a fallback, you may still lower the hold and keepalive timers to something like 30 and 10 seconds). 
 
 BFD is a general purpose protocol which can be used to detect end-to-end communication failures *quickly*. Most enterprise-grade switches and routers implement BFD at the hardware/ASIC level as it allows to detect failures in the range of milliseconds (whether you really *want* that is another story). Luckily, bird supports BFD out of the box. We'll enable BFD for all TAP interfaces on our Ganeti nodes:
 
@@ -281,6 +285,10 @@ Jokes aside, what are pros of a pure layer 3 network (even without Ganeti)? Firs
 
 Getting rid of layer 2 also means you can ditch all those fun & ancient technologies like spanning tree, LACP, MCLAG, VRRP/CARP/HSRP and the like. OTOH, the technologies required to operate a layer 3 network (e.g. BGP) are in your toolbelt anyway, *if* you operate your own AS. Also, you get traffic steering for free (draining links in advance instead of "pull-the-plug-and-hope-that-some-weird-technology-deals-with-that-properly", wow!).
 
-Today, a new datacenter network architecture will almost always be based on a layer 3 underlay network. Those who really need layer 2 will add that as an extra layer on top with technologies like EVPN, VXLAN and the like. So you get to build a fancy layer 3 network, then add some more technologies on top, only to be able to keep using LACP, VRRP and whatnot *on top* of that. The only imaginable upside to this is: you do not need to touch any of your servers (virtual or physical).
+Today, a new datacenter network architecture will almost always be based on a layer 3 underlay network. Those who really need layer 2 will add that as an extra layer on top with technologies like EVPN, VXLAN and the like (oh, the irony!). So you get to build a fancy layer 3 network, then add some more technologies on top, only to be able to keep using LACP, VRRP and whatnot *on top* of that. The only imaginable upside to this is: you do not need to touch any of your servers (virtual or physical).
 
-Sure, there are downsides: going full layer 3 means added complexity on the server side. Be it bird, FRR or something else: you need some additional software to deal with BGP on your servers and it makes server deployment a tad more complicated (rest assured, we got that covered in a fully automated way both for hardware and virtual servers). But that is a trade-off we are willing to accept, given all the other technologies that are eliminated from our stack.
+Sure, there are downsides: going full layer 3 means added complexity on the server side. Be it bird, [FRR](https://frrouting.org/) or something else: you need some additional software to deal with BGP on your servers and it makes server deployment a tad more complicated (rest assured, we got that covered in a fully automated way both for hardware and virtual servers). But that is a trade-off we are willing to accept, given all the other technologies that are eliminated from our stack.
+
+On top of that, you end up with a complete layer-3-only path directly from your network's edge down into your hosts and your virtual machines. Your servers become first-class network citizens, and you can pass some of that fanciness on to your workloads: anycast setups with [exabgp](https://github.com/Exa-Networks/exabgp) or similar, or a k8s CNI that uses your network natively instead of dragging in overlays, NAT, and other sources of problems.
+
+And as a happy side effect, the work landed back in Ganeti itself: from 3.2 onwards, the `ext` mode lets the next operator wire this up without the `kvm-vif-bridge` detour. If you're running Ganeti and have been waiting for an excuse to retire layer 2, this might be it.
