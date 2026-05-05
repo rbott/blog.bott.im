@@ -36,7 +36,7 @@ We started with the following goals and non-goals for the new VM infrastructure:
 
 Before we jump straight into our setup, you might need a refresh on Ganeti instance network modes. I got you covered, [there's one right here](https://blog.bott.im/revisiting-ganetis-network-modes/)! If you're already confident how all of that works (and you also already know about the cool new network-related features Ganeti 3.2 will bring), you may as well skip directly to the next section!
 
-TL;DR for the impatient: Ganeti's `routed` mode only routes between host and instance — outside connectivity is still assumed to be layer 2. We work around that with a `kvm-vif-bridge` script (Ganeti 3.1 and earlier) or the new `ext` mode (3.2).
+TL;DR for the impatient: Ganeti's `routed` mode only routes between host and instance - outside connectivity is still assumed to be layer 2. We work around that with a `kvm-vif-bridge` script (Ganeti 3.1 and earlier) or the new `ext` mode (3.2).
 
 # Ganeti Setup
 
