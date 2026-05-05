@@ -1,6 +1,6 @@
 ---
 title: "Revisiting Ganeti's Network Modes"
-description: "There's a little bit of dust on Ganeti's networking — let's refresh it for the upcoming version 3.2!"
+description: "There's a little bit of dust on Ganeti's networking - let's refresh it for the upcoming version 3.2!"
 date: 2026-05-05
 tags:
   - ganeti
@@ -11,7 +11,9 @@ tags:
   - bridged
 ---
 
-For quite a while now, Ganeti has supported three distinct modes of network operation. You can choose your flavor(s) for each instance network interface separately with the `mode` parameter (`bridged`, `openvswitch` or `routed`). Again for clarity: the network mode is *not* set on instance level, but on NIC level. You may mix-and-match multiple modes on a single instance with multiple virtual NICs.
+As one of the Ganeti maintainers, I've spent a fair bit of time in the network configuration code over the past weeks. With version 3.2 about to land - bringing the first meaningful changes to that part of the codebase in a while - this is a good moment to walk through the network modes Ganeti offers, their use cases, and the improvements landing in 3.2.
+
+For quite a while now, Ganeti has supported three distinct modes of network operation. You can choose your flavor(s) for each instance network interface separately with the `mode` parameter (`bridged`, `openvswitch` or `routed`). For clarity: the network mode is *not* set on instance level, but on NIC level. You may mix-and-match multiple modes on a single instance with multiple virtual NICs.
 
 # Bridged - The Traditional One
 
