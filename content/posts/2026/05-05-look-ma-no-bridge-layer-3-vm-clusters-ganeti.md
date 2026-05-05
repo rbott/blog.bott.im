@@ -53,7 +53,7 @@ Pros:
 Cons:
 - We are limited by Ganeti's data model: only one IP address per virtual NIC
 - Changing the IP address of an instance requires work in Ganeti (update instance configuration and reboot instance) *and* re-configure network inside the instance
-- Public systems end up with *a lot* of MAC addresses in the ARP cache
+- Public systems end up with *a lot* of MAC addresses in the ARP cache (see [this post](https://blog.bott.im/revisiting-ganetis-network-modes/#routed-but-not-in-the-way-you-might-think) if you are unsure why this is)
 
 While it worked, especially the inflexible IP configuration made us dismiss this solution. All of our servers ("classic" physical or virtual servers but also the newer layer-3-only physical servers) are "in charge" of their network configuration. They can change their IP address without external dependencies (especially without a reboot). While changing a server's IP address is not exactly a regular maintenance task, adding secondary IPs or running dual stack configurations is more common. Neither would be possible with this setup. For the record: Ganeti's `ip` NIC parameter *does* support IPv6, but only one IP address at a time and you would then end up with a dedicated IPv4 NIC and another dedicated IPv6 NIC inside your instances.
 
@@ -157,7 +157,7 @@ include "/etc/bird/bird.conf.d/*.conf";
 
 Starting with Ganeti 3.2, we do not have to rely on the `kvm-vif-bridge` hack anymore and can use the `ext` network mode instead (but with roughly the same shell script). Along with the `ext` mode, there's now also a `down` script so that we can properly clean up bird BGP sessions when an instance shuts down or migrates over to another node.
 
-Within the instance, we need to configure our bird instance as well. This will be our BGP peer configuration (plus related snippets):
+Within the instance, we need to configure bird as well. This will be our BGP peer configuration (plus related snippets):
 
 ```
 protocol direct {
